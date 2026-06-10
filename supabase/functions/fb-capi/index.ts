@@ -30,6 +30,7 @@ Deno.serve(async (req) => {
       email,
       phone,
       custom_data,
+      test_event_code,
     } = body as Record<string, string | undefined> & { custom_data?: Record<string, unknown> };
 
     if (!event_name) {
@@ -38,7 +39,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Extract client IP from request headers
     const xff = req.headers.get('x-forwarded-for') ?? '';
     const client_ip_address = xff.split(',')[0].trim() || undefined;
     const client_user_agent = user_agent || req.headers.get('user-agent') || undefined;
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     if (email) user_data.em = [await sha256(email)];
     if (phone) user_data.ph = [await sha256(phone.replace(/[^0-9]/g, ''))];
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       data: [{
         event_name,
         event_time: Math.floor(Date.now() / 1000),
@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
         custom_data: custom_data ?? {},
       }],
     };
+    if (test_event_code) payload.test_event_code = test_event_code;
 
     const url = `https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${ACCESS_TOKEN}`;
     const fbRes = await fetch(url, {
@@ -70,6 +71,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
     const result = await fbRes.json();
+    console.log('FB CAPI', event_name, 'test=', test_event_code ?? 'no', 'status=', fbRes.status, JSON.stringify(result));
 
     return new Response(JSON.stringify({ ok: fbRes.ok, result }), {
       status: fbRes.ok ? 200 : 502,

@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect, useRef } from 'react';
-import { LogOut, Image, Palette, Loader2, Sun, Moon, BarChart3, Eye, ShoppingCart, CreditCard, Package, Upload } from 'lucide-react';
+import { LogOut, Image, Palette, Loader2, Sun, Moon, BarChart3, Eye, ShoppingCart, CreditCard, Package, Upload, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminDashboard = () => {
@@ -20,6 +20,8 @@ const AdminDashboard = () => {
   const [bannerTitle, setBannerTitle] = useState('');
   const [themeHue, setThemeHue] = useState('340');
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
+  const [fbTestCode, setFbTestCode] = useState('');
+  const [savingFb, setSavingFb] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +30,8 @@ const AdminDashboard = () => {
     if (settings) {
       setThemeHue(settings.active_theme || '340');
       setThemeMode((settings as any).theme_mode === 'dark' ? 'dark' : 'light');
+      const cs = ((settings as any).custom_settings ?? {}) as Record<string, unknown>;
+      setFbTestCode(typeof cs.fb_test_event_code === 'string' ? cs.fb_test_event_code : '');
     }
   }, [settings]);
 
@@ -176,6 +180,44 @@ const AdminDashboard = () => {
           </div>
           <Button onClick={handleUpdateTheme} disabled={saving} className="w-full gradient-primary text-primary-foreground rounded-xl">
             تحديث الثيم
+          </Button>
+        </div>
+        </div>
+
+        {/* Facebook Pixel Test Events */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity size={20} className="text-primary" />
+            <h2 className="font-bold">Facebook Test Events</h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            انسخ كود الاختبار من Events Manager → Test Events والصقه هنا. اتركه فاضي بعد ما تخلص الاختبار.
+          </p>
+          <Input
+            value={fbTestCode}
+            onChange={e => setFbTestCode(e.target.value)}
+            placeholder="TEST12345"
+            className="rounded-xl"
+            dir="ltr"
+          />
+          <Button
+            onClick={async () => {
+              setSavingFb(true);
+              const cs = { ...(((settings as any)?.custom_settings) ?? {}), fb_test_event_code: fbTestCode || null };
+              const { error } = await supabase
+                .from('app_settings')
+                .update({ custom_settings: cs, updated_at: new Date().toISOString() } as any)
+                .eq('id', 'main');
+              setSavingFb(false);
+              if (error) { toast.error('حدث خطأ'); return; }
+              if (typeof window !== 'undefined') (window as any).__FB_TEST_EVENT_CODE = fbTestCode || undefined;
+              toast.success(fbTestCode ? 'تم تفعيل كود الاختبار' : 'تم إيقاف كود الاختبار');
+              refetchSettings();
+            }}
+            disabled={savingFb}
+            className="w-full gradient-primary text-primary-foreground rounded-xl"
+          >
+            {savingFb ? <Loader2 className="animate-spin" /> : 'حفظ'}
           </Button>
         </div>
       </div>
