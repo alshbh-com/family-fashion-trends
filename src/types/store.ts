@@ -19,7 +19,16 @@ export type StoreOffer = {
   end_date: string | null;
 };
 
-export type StoreProduct = ProductRow & {
+export type StoreProduct = Omit<ProductRow, 'price' | 'offer_price' | 'discount_price' | 'stock' | 'rating' | 'low_stock_threshold' | 'color_options' | 'size_options' | 'quantity_pricing'> & {
+  price: number;
+  offer_price: number | null;
+  discount_price: number | null;
+  stock: number | null;
+  rating: number | null;
+  low_stock_threshold: number | null;
+  color_options: string[];
+  size_options: string[];
+  quantity_pricing: Array<{ quantity: number; price: number }>;
   product_images: ProductImageRow[];
   product_color_variants: Array<{ color: string; sizes: string[] }>;
 };

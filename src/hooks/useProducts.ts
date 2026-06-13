@@ -5,12 +5,59 @@ import type { ProductImageRow, ProductRow, StoreProduct } from '@/types/store';
 
 const PAGE_SIZE = 20;
 
+const toNumber = (value: unknown): number => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+};
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined || value === '') return null;
+  return toNumber(value);
+};
+
+const toStringArray = (value: unknown): string[] => {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+};
+
+const toQuantityPricing = (value: unknown): Array<{ quantity: number; price: number }> => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => {
+      if (!item || typeof item !== 'object') return null;
+      const entry = item as Record<string, unknown>;
+      return {
+        quantity: toNumber(entry.quantity),
+        price: toNumber(entry.price),
+      };
+    })
+    .filter((item): item is { quantity: number; price: number } => !!item);
+};
+
+const normalizeProduct = (product: ProductRow, productImages: ProductImageRow[]): StoreProduct => ({
+  ...product,
+  price: toNumber(product.price),
+  offer_price: toNullableNumber(product.offer_price),
+  discount_price: toNullableNumber(product.discount_price),
+  stock: toNullableNumber(product.stock),
+  rating: toNullableNumber(product.rating),
+  low_stock_threshold: toNullableNumber(product.low_stock_threshold),
+  color_options: toStringArray(product.color_options),
+  size_options: toStringArray(product.size_options),
+  quantity_pricing: toQuantityPricing(product.quantity_pricing),
+  product_images: productImages,
+  product_color_variants: [],
+});
+
 const attachProductImages = async (products: ProductRow[] | null | undefined): Promise<StoreProduct[]> => {
   const safeProducts = products ?? [];
   const productIds = safeProducts.map(product => product.id).filter(Boolean) as string[];
 
   if (productIds.length === 0) {
-    return safeProducts.map(product => ({ ...product, product_images: [], product_color_variants: [] }));
+    return safeProducts.map(product => normalizeProduct(product, []));
   }
 
   const { data: images, error } = await supabase
@@ -24,9 +71,7 @@ const attachProductImages = async (products: ProductRow[] | null | undefined): P
   const safeImages = (images ?? []) as ProductImageRow[];
 
   return safeProducts.map(product => ({
-    ...product,
-    product_images: safeImages.filter(image => image.product_id === product.id),
-    product_color_variants: [],
+    ...normalizeProduct(product, safeImages.filter(image => image.product_id === product.id)),
   }));
 };
 
@@ -35,7 +80,7 @@ export const useProducts = () => {
   return useInfiniteQuery<StoreProduct[]>({
     queryKey: ['products', accessoryIds],
     queryFn: async ({ pageParam = 0 }) => {
-      const from = pageParam * PAGE_SIZE;
+      const from = Number(pageParam) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let q = supabase
         .from('products_rows')
