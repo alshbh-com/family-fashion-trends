@@ -19,15 +19,16 @@ export const useAppSettings = () => {
   });
 
   // Realtime subscription for live theme updates
+  const { refetch } = query;
   useEffect(() => {
-    const channel = supabase
-      .channel('app-settings-realtime')
+    const channel = supabase.channel(`app-settings-realtime-${Math.random().toString(36).slice(2)}`);
+    channel
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings_rows' }, () => {
-        query.refetch();
+        refetch();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [query.refetch]);
+  }, [refetch]);
 
   return query;
 };
