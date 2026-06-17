@@ -20,7 +20,7 @@ export const useBanners = () => {
   useEffect(() => {
     const channel = supabase
       .channel('banners-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners_rows' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, () => {
         query.refetch();
       })
       .subscribe();

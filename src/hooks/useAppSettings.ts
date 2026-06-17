@@ -23,7 +23,7 @@ export const useAppSettings = () => {
   useEffect(() => {
     const channel = supabase.channel(`app-settings-realtime-${Math.random().toString(36).slice(2)}`);
     channel
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings_rows' }, () => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_settings' }, () => {
         refetch();
       })
       .subscribe();
