@@ -1,10 +1,10 @@
 import type { Database } from '@/integrations/supabase/types';
 
-export type ProductRow = Database['public']['Tables']['products_rows']['Row'];
-export type ProductImageRow = Database['public']['Tables']['product_images_rows']['Row'];
-export type BannerRow = Database['public']['Tables']['banners_rows']['Row'];
-export type AppSettingsRow = Database['public']['Tables']['app_settings_rows']['Row'];
-export type GovernorateRow = Database['public']['Tables']['governorates_rows']['Row'];
+export type ProductRow = Database['public']['Tables']['products']['Row'];
+export type ProductImageRow = Database['public']['Tables']['product_images']['Row'];
+export type BannerRow = Database['public']['Tables']['banners']['Row'];
+export type AppSettingsRow = Database['public']['Tables']['app_settings']['Row'];
+export type GovernorateRow = Database['public']['Tables']['governorates']['Row'];
 
 export type StoreCategory = {
   id: string;

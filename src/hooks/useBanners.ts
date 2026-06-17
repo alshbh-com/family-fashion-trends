@@ -8,7 +8,7 @@ export const useBanners = () => {
     queryKey: ['banners'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('banners_rows')
+        .from('banners')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
@@ -20,7 +20,7 @@ export const useBanners = () => {
   useEffect(() => {
     const channel = supabase
       .channel('banners-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners_rows' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, () => {
         query.refetch();
       })
       .subscribe();
